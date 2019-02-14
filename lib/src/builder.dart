@@ -29,8 +29,11 @@ final Set<String> _kBlockTags = new Set<String>.from(<String>[
 
 const List<String> _kListTags = const <String>['ul', 'ol'];
 
+const List<String> _kCodeTags = const <String>['pre', 'code'];
+
 bool _isBlockTag(String tag) => _kBlockTags.contains(tag);
 bool _isListTag(String tag) => _kListTags.contains(tag);
+bool _isCodeTag(String tag) => _kCodeTags.contains(tag);
 
 class _BlockElement {
   _BlockElement(this.tag);
@@ -100,6 +103,7 @@ class MarkdownBuilder implements md.NodeVisitor {
   final List<_InlineElement> _inlines = <_InlineElement>[];
   final List<GestureRecognizer> _linkHandlers = <GestureRecognizer>[];
 
+  String _lastVisitedTag;
 
   /// Returns widgets that display the given Markdown nodes.
   ///
@@ -128,7 +132,7 @@ class MarkdownBuilder implements md.NodeVisitor {
 
     _addParentInlineIfNeeded(_blocks.last.tag);
 
-    final TextSpan span = _blocks.last.tag == 'pre'
+    final TextSpan span = _isCodeTag(_lastVisitedTag)
       ? delegate.formatText(styleSheet, text.text)
       : new TextSpan(
           style: _inlines.last.style,
@@ -142,6 +146,7 @@ class MarkdownBuilder implements md.NodeVisitor {
   @override
   bool visitElementBefore(md.Element element) {
     final String tag = element.tag;
+    _lastVisitedTag = tag;
     if (_isBlockTag(tag)) {
       _addAnonymousBlockIfNeeded(styleSheet.styles[tag]);
       if (_isListTag(tag))
@@ -167,7 +172,7 @@ class MarkdownBuilder implements md.NodeVisitor {
   @override
   void visitElementAfter(md.Element element) {
     final String tag = element.tag;
-
+    _lastVisitedTag = tag;
     if (_isBlockTag(tag)) {
       _addAnonymousBlockIfNeeded(styleSheet.styles[tag]);
 
